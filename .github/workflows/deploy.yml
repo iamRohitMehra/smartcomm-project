@@ -11,7 +11,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -29,22 +29,43 @@ jobs:
             --stack-name SmartCommStack \
             --capabilities CAPABILITY_NAMED_IAM
 
-      - name: Wait for Lambda to be available
+      # Optional step - list functions for debugging purposes
+      - name: List AWS Lambda Functions (for debugging)
+        run: aws lambda list-functions --region ap-south-1
+
+      - name: Wait for Lambda functions to be available
         run: |
-          echo "Waiting for Lambda functions to be created..."
-          aws lambda get-function --function-name new-smartcomm-check-status
-          aws lambda get-function --function-name new-smartcomm-doc-generator
+          set -e
+          for fn in new-smartcomm-check-status new-smartcomm-doc-generator; do
+            echo "Checking for Lambda function: $fn"
+            for i in {1..10}; do
+              if aws lambda get-function --function-name $fn --region ap-south-1 > /dev/null 2>&1; then
+                echo "$fn is available!"
+                break
+              else
+                echo "$fn not available yet. Retry $i/10, waiting 10s..."
+                sleep 10
+              fi
+              if [ $i -eq 10 ]; then
+                echo "$fn did not become available in time. Failing pipeline."
+                aws lambda list-functions --region ap-south-1
+                exit 1
+              fi
+            done
+          done
 
       - name: Zip and update CheckStatus Lambda
         run: |
           zip -j checkstatus.zip lambda/new-smartcomm-check-status/index.py
           aws lambda update-function-code \
             --function-name new-smartcomm-check-status \
-            --zip-file fileb://checkstatus.zip
+            --zip-file fileb://checkstatus.zip \
+            --region ap-south-1
 
       - name: Zip and update GenerateDoc Lambda
         run: |
           zip -j generatedoc.zip lambda/new-smartcomm-doc-generator/index.py
           aws lambda update-function-code \
             --function-name new-smartcomm-doc-generator \
-            --zip-file fileb://generatedoc.zip
+            --zip-file fileb://generatedoc.zip \
+            --region ap-south-1
