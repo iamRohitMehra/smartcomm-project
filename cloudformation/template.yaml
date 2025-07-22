@@ -17,6 +17,35 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+  GitHubActionsOIDCRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GitHubActionsOIDCRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: arn:aws:iam::214401628153:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: repo:iamRohitMehra/smartcomm-project:ref:refs/heads/main
+      Policies:
+        - PolicyName: GitHubActionsDeploymentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - lambda:*
+                  - apigateway:*
+                  - iam:PassRole
+                Resource: "*"
+
   CheckStatusFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -118,3 +147,5 @@ Outputs:
     Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGCheckStatus
   GenerateDocURL:
     Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGGenerateDocument
+  GitHubOIDCRoleArn:
+    Value: !GetAtt GitHubActionsOIDCRole.Arn

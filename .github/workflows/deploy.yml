@@ -31,14 +31,15 @@ jobs:
 
       - name: Zip and update CheckStatus Lambda
         run: |
-          zip -j function.zip lambda/new-smartcomm-check-status/index.py
+          zip -j checkstatus.zip lambda/new-smartcomm-check-status/index.py
           aws lambda update-function-code \
             --function-name new-smartcomm-check-status \
-            --zip-file fileb://function.zip
+            --zip-file fileb://checkstatus.zip
 
       - name: Zip and update GenerateDoc Lambda
         run: |
-          zip -j function.zip lambda/new-smartcomm-doc-generator/index.py
+          zip -j generatedoc.zip lambda/new-smartcomm-doc-generator/index.py
           aws lambda update-function-code \
             --function-name new-smartcomm-doc-generator \
-            --zip-file fileb://function.zip
+            --zip-file fileb://generatedoc.zip
+
