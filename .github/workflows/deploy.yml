@@ -2,7 +2,7 @@ name: Deploy Lambda and API
 
 on:
   push:
-    branches: [main]  # Change this to your actual working branch
+    branches: [main]
 
 permissions:
   id-token: write
@@ -29,6 +29,12 @@ jobs:
             --stack-name SmartCommStack \
             --capabilities CAPABILITY_NAMED_IAM
 
+      - name: Wait for Lambda to be available
+        run: |
+          echo "Waiting for Lambda functions to be created..."
+          aws lambda get-function --function-name new-smartcomm-check-status
+          aws lambda get-function --function-name new-smartcomm-doc-generator
+
       - name: Zip and update CheckStatus Lambda
         run: |
           zip -j checkstatus.zip lambda/new-smartcomm-check-status/index.py
@@ -42,4 +48,3 @@ jobs:
           aws lambda update-function-code \
             --function-name new-smartcomm-doc-generator \
             --zip-file fileb://generatedoc.zip
-
