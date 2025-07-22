@@ -26,16 +26,17 @@ jobs:
           --stack-name SmartCommStack \
           --capabilities CAPABILITY_NAMED_IAM
 
-    - name: Zip and update CheckStatus Lambda
-      run: |
-        zip -j function.zip lambda/check_status/index.py
-        aws lambda update-function-code \
-          --function-name new-smartcomm-check-status \
-          --zip-file fileb://function.zip
+- name: Zip and update CheckStatus Lambda
+  run: |
+    zip -j function.zip lambda/new-smartcomm-check-status/index.py
+    aws lambda update-function-code \
+      --function-name new-smartcomm-check-status \
+      --zip-file fileb://function.zip
 
-    - name: Zip and update GenerateDoc Lambda
-      run: |
-        zip -j function.zip lambda/generate_doc/index.py
-        aws lambda update-function-code \
-          --function-name new-smartcomm-doc-generator \
-          --zip-file fileb://function.zip
+- name: Zip and update GenerateDoc Lambda
+  run: |
+    zip -j function.zip lambda/new-smartcomm-doc-generator/index.py
+    aws lambda update-function-code \
+      --function-name new-smartcomm-doc-generator \
+      --zip-file fileb://function.zip
+
