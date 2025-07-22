@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Infra for SmartComm Lambdas and API Gateway
+
+Resources:
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaInlineExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  CheckStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: new-smartcomm-check-status
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {"statusCode": 200, "body": "Placeholder"}
+      Timeout: 10
+
+  GenerateDocFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: new-smartcomm-doc-generator
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {"statusCode": 200, "body": "Placeholder"}
+      Timeout: 10
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: SmartCommAPI
+
+  CheckStatusResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: PRGCheckStatus
+
+  GenerateDocResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: PRGGenerateDocument
+
+  CheckStatusMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref CheckStatusResource
+      RestApiId: !Ref RestApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
+
+  GenerateDocMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref GenerateDocResource
+      RestApiId: !Ref RestApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GenerateDocFunction.Arn}/invocations
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - CheckStatusMethod
+      - GenerateDocMethod
+    Properties:
+      RestApiId: !Ref RestApi
+      StageName: prod
+
+  LambdaPermissionCheckStatus:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CheckStatusFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/POST/PRGCheckStatus
+
+  LambdaPermissionGenerateDoc:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GenerateDocFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/POST/PRGGenerateDocument
+
+Outputs:
+  CheckStatusURL:
+    Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGCheckStatus
+  GenerateDocURL:
+    Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGGenerateDocument
