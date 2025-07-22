@@ -2,41 +2,40 @@ name: Deploy Lambda and API
 
 on:
   push:
-    branches: [main]  # change if using iso/dev etc.
+    branches: [main]  # Change if using iso/dev/etc.
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-south-1  # or ap-south-1
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1  # or us-east-1
 
-    - name: Deploy CloudFormation stack (infra only)
-      run: |
-        aws cloudformation deploy \
-          --template-file cloudformation/template.yaml \
-          --stack-name SmartCommStack \
-          --capabilities CAPABILITY_NAMED_IAM
+      - name: Deploy CloudFormation stack (infra only)
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation/template.yaml \
+            --stack-name SmartCommStack \
+            --capabilities CAPABILITY_NAMED_IAM
 
-- name: Zip and update CheckStatus Lambda
-  run: |
-    zip -j function.zip lambda/new-smartcomm-check-status/index.py
-    aws lambda update-function-code \
-      --function-name new-smartcomm-check-status \
-      --zip-file fileb://function.zip
+      - name: Zip and update CheckStatus Lambda
+        run: |
+          zip -j function.zip lambda/new-smartcomm-check-status/index.py
+          aws lambda update-function-code \
+            --function-name new-smartcomm-check-status \
+            --zip-file fileb://function.zip
 
-- name: Zip and update GenerateDoc Lambda
-  run: |
-    zip -j function.zip lambda/new-smartcomm-doc-generator/index.py
-    aws lambda update-function-code \
-      --function-name new-smartcomm-doc-generator \
-      --zip-file fileb://function.zip
-
+      - name: Zip and update GenerateDoc Lambda
+        run: |
+          zip -j function.zip lambda/new-smartcomm-doc-generator/index.py
+          aws lambda update-function-code \
+            --function-name new-smartcomm-doc-generator \
+            --zip-file fileb://function.zip
