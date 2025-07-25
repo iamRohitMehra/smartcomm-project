@@ -95,7 +95,7 @@ Resources:
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
-      HttpMethod: POST
+      HttpMethod: GET
       ResourceId: !Ref CheckStatusResource
       RestApiId: !Ref RestApi
       Integration:
@@ -132,7 +132,7 @@ Resources:
       FunctionName: !Ref CheckStatusFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/POST/PRGCheckStatus
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/GET/PRGCheckStatus
 
   LambdaPermissionGenerateDoc:
     Type: AWS::Lambda::Permission
