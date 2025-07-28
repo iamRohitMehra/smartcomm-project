@@ -121,11 +121,14 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref CheckStatusResource
       RestApiId: !Ref RestApi
+      RequestParameters:
+        method.request.querystring.jobId: true
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
         Uri: !Sub
           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
+
 
   GenerateDocMethod:
     Type: AWS::ApiGateway::Method
