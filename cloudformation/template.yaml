@@ -46,7 +46,6 @@ Resources:
                   - iam:PassRole
                 Resource: "*"
 
-
   CheckStatusFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -60,15 +59,12 @@ Resources:
 
           def lambda_handler(event, context):
               print("EVENT:", json.dumps(event))
-
-              job_id = None
-              if event.get("queryStringParameters"):
-                  job_id = event["queryStringParameters"].get("jobId", None)
+              job_id = event.get("pathParameters", {}).get("jobId")
 
               return {
                   "statusCode": 200,
                   "body": json.dumps({
-                      "message": "Received parameters",
+                      "message": "Received path parameter",
                       "id": job_id,
                       "status": "success" if job_id else "error"
                   }),
@@ -77,10 +73,6 @@ Resources:
                   }
               }
       Timeout: 10
-
-
-
-
 
   GenerateDocFunction:
     Type: AWS::Lambda::Function
@@ -100,6 +92,7 @@ Resources:
     Properties:
       Name: SmartCommAPI
 
+  # /PRGCheckStatus
   CheckStatusResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -107,6 +100,31 @@ Resources:
       ParentId: !GetAtt RestApi.RootResourceId
       PathPart: PRGCheckStatus
 
+  # /PRGCheckStatus/{jobId}
+  CheckStatusJobIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !Ref CheckStatusResource
+      PathPart: "{jobId}"
+
+  # GET /PRGCheckStatus/{jobId}
+  CheckStatusJobIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !Ref CheckStatusJobIdResource
+      RestApiId: !Ref RestApi
+      RequestParameters:
+        method.request.path.jobId: true
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
+
+  # /PRGGenerateDocument
   GenerateDocResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -114,22 +132,7 @@ Resources:
       ParentId: !GetAtt RestApi.RootResourceId
       PathPart: PRGGenerateDocument
 
-  CheckStatusMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      AuthorizationType: NONE
-      HttpMethod: GET
-      ResourceId: !Ref CheckStatusResource
-      RestApiId: !Ref RestApi
-      RequestParameters:
-        method.request.querystring.jobId: true
-      Integration:
-        IntegrationHttpMethod: POST
-        Type: AWS_PROXY
-        Uri: !Sub
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
-
-
+  # POST /PRGGenerateDocument
   GenerateDocMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -146,19 +149,19 @@ Resources:
   ApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
-      - CheckStatusMethod
       - GenerateDocMethod
+      - CheckStatusJobIdMethod
     Properties:
       RestApiId: !Ref RestApi
       StageName: prod
 
-  LambdaPermissionCheckStatus:
+  LambdaPermissionCheckStatusJobId:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref CheckStatusFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/GET/PRGCheckStatus
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/GET/PRGCheckStatus/*
 
   LambdaPermissionGenerateDoc:
     Type: AWS::Lambda::Permission
@@ -170,7 +173,7 @@ Resources:
 
 Outputs:
   CheckStatusURL:
-    Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGCheckStatus
+    Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGCheckStatus/{jobId}
   GenerateDocURL:
     Value: !Sub https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/PRGGenerateDocument
   GitHubOIDCRoleArn:
