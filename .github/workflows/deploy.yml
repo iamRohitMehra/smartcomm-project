@@ -31,12 +31,13 @@ jobs:
           aws s3 cp build/checkstatus.zip s3://smartcommengines3/checkstatus.zip --region ap-south-1
           aws s3 cp build/generatedoc.zip s3://smartcommengines3/generatedoc.zip --region ap-south-1
 
-      # Deploy CloudFormation stack (now code comes from S3)
+      # Deploy CloudFormation stack with S3 bucket parameter
       - name: Deploy CloudFormation stack
         run: |
           aws cloudformation deploy \
             --template-file cloudformation/template.yaml \
             --stack-name SmartCommStack \
             --capabilities CAPABILITY_NAMED_IAM \
-            --region ap-south-1
+            --region ap-south-1 \
+            --parameter-overrides DeploymentS3Bucket=smartcommengines3
           echo "Deployment completed successfully."

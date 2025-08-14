@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Infra for SmartComm Lambdas and API Gateway
 
+Parameters:
+  DeploymentS3Bucket:
+    Type: String
+    Description: Name of existing S3 bucket containing Lambda deployment packages
+
 Resources:
 
   LambdaExecutionRole:
@@ -47,11 +52,6 @@ Resources:
                   - iam:PassRole
                 Resource: "*"
 
-  SmartCommS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: smartcommengines3
-
   CheckStatusFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -60,7 +60,7 @@ Resources:
       Runtime: python3.11
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        S3Bucket: smartcommengines3
+        S3Bucket: !Ref DeploymentS3Bucket
         S3Key: checkstatus.zip
       Timeout: 10
 
@@ -72,7 +72,7 @@ Resources:
       Runtime: python3.11
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        S3Bucket: smartcommengines3
+        S3Bucket: !Ref DeploymentS3Bucket
         S3Key: generatedoc.zip
       Timeout: 10
 
