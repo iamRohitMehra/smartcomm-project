@@ -43,8 +43,14 @@ Resources:
                   - cloudformation:*
                   - lambda:*
                   - apigateway:*
+                  - s3:*
                   - iam:PassRole
                 Resource: "*"
+
+  SmartCommS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: smartcommengines3
 
   CheckStatusFunction:
     Type: AWS::Lambda::Function
@@ -54,24 +60,8 @@ Resources:
       Runtime: python3.11
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        ZipFile: |
-          import json
-
-          def lambda_handler(event, context):
-              print("EVENT:", json.dumps(event))
-              job_id = event.get("pathParameters", {}).get("jobId")
-
-              return {
-                  "statusCode": 200,
-                  "body": json.dumps({
-                      "message": "Received path parameter",
-                      "id": job_id,
-                      "status": "success" if job_id else "error"
-                  }),
-                  "headers": {
-                      "Content-Type": "application/json"
-                  }
-              }
+        S3Bucket: smartcommengines3
+        S3Key: checkstatus.zip
       Timeout: 10
 
   GenerateDocFunction:
@@ -82,9 +72,8 @@ Resources:
       Runtime: python3.11
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        ZipFile: |
-          def lambda_handler(event, context):
-              return {"statusCode": 200, "body": "Placeholder"}
+        S3Bucket: smartcommengines3
+        S3Key: generatedoc.zip
       Timeout: 10
 
   RestApi:
