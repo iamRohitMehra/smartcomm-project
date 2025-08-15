@@ -22,16 +22,26 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ap-south-1
 
-      # Package Lambda functions and upload to S3
+      # Package Lambda functions and upload to S3 with unique keys
       - name: Package Lambda functions
         run: |
+          commit_hash=$(git rev-parse --short HEAD)
+          echo "Commit hash: $commit_hash"
+
           mkdir -p build
           zip -j build/checkstatus.zip lambda/new-smartcomm-check-status/*.py
           zip -j build/generatedoc.zip lambda/new-smartcomm-doc-generator/*.py
-          aws s3 cp build/checkstatus.zip s3://smartcommengines3/checkstatus.zip --region ap-south-1
-          aws s3 cp build/generatedoc.zip s3://smartcommengines3/generatedoc.zip --region ap-south-1
 
-      # Deploy CloudFormation stack with S3 bucket parameter
+          CHECK_KEY="checkstatus-$commit_hash.zip"
+          DOC_KEY="generatedoc-$commit_hash.zip"
+
+          aws s3 cp build/checkstatus.zip s3://smartcommengines3/$CHECK_KEY --region ap-south-1
+          aws s3 cp build/generatedoc.zip s3://smartcommengines3/$DOC_KEY --region ap-south-1
+
+          echo "CHECK_KEY=$CHECK_KEY" >> $GITHUB_ENV
+          echo "DOC_KEY=$DOC_KEY" >> $GITHUB_ENV
+
+      # Deploy CloudFormation stack with S3 keys as parameters
       - name: Deploy CloudFormation stack
         run: |
           aws cloudformation deploy \
@@ -39,5 +49,8 @@ jobs:
             --stack-name SmartCommStack \
             --capabilities CAPABILITY_NAMED_IAM \
             --region ap-south-1 \
-            --parameter-overrides DeploymentS3Bucket=smartcommengines3
+            --parameter-overrides \
+              DeploymentS3Bucket=smartcommengines3 \
+              CheckStatusS3Key=${CHECK_KEY} \
+              GenerateDocS3Key=${DOC_KEY}
           echo "Deployment completed successfully."

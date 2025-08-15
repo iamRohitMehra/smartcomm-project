@@ -5,6 +5,12 @@ Parameters:
   DeploymentS3Bucket:
     Type: String
     Description: Name of existing S3 bucket containing Lambda deployment packages
+  CheckStatusS3Key:
+    Type: String
+  GenerateDocS3Key:
+    Type: String
+
+
 
 Resources:
 
@@ -61,7 +67,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: !Ref DeploymentS3Bucket
-        S3Key: checkstatus.zip
+        S3Key: !Ref CheckStatusS3Key
       Timeout: 10
 
   GenerateDocFunction:
@@ -73,7 +79,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: !Ref DeploymentS3Bucket
-        S3Key: generatedoc.zip
+        S3Key: !Ref GenerateDocS3Key
       Timeout: 10
 
   RestApi:
