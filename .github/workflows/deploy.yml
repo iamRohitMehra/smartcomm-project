@@ -2,7 +2,9 @@ name: Deploy Lambda and API
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+      - nre
 
 permissions:
   id-token: write
