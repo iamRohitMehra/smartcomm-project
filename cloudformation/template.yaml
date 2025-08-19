@@ -10,8 +10,6 @@ Parameters:
   GenerateDocS3Key:
     Type: String
 
-
-
 Resources:
 
   LambdaExecutionRole:
@@ -43,10 +41,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-           #     "token.actions.githubusercontent.com:sub": [
-            #       "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/main",
-             #      "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/nre" ]
-               token.actions.githubusercontent.com:sub: repo:iamRohitMehra/smartcomm-project:ref:refs/heads/*"
+                token.actions.githubusercontent.com:sub: "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/*"
       Policies:
         - PolicyName: GitHubActionsDeploymentPolicy
           PolicyDocument:
@@ -119,8 +114,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
-        Uri: !Sub
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckStatusFunction.Arn}/invocations
 
   # /PRGGenerateDocument
   GenerateDocResource:
@@ -141,18 +135,12 @@ Resources:
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
-        Uri: !Sub
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GenerateDocFunction.Arn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GenerateDocFunction.Arn}/invocations
 
   ApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
       - GenerateDocMethod
-
-
-
-
-
       - CheckStatusJobIdMethod
     Properties:
       RestApiId: !Ref RestApi
