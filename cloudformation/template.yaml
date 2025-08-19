@@ -43,10 +43,10 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                "token.actions.githubusercontent.com:sub": [
-                   "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/main",
-                   "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/nre" ]
-            #    token.actions.githubusercontent.com:sub: repo:iamRohitMehra/smartcomm-project:ref:refs/heads/main
+           #     "token.actions.githubusercontent.com:sub": [
+            #       "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/main",
+             #      "repo:iamRohitMehra/smartcomm-project:ref:refs/heads/nre" ]
+               token.actions.githubusercontent.com:sub: repo:iamRohitMehra/smartcomm-project:ref:refs/heads/*"
       Policies:
         - PolicyName: GitHubActionsDeploymentPolicy
           PolicyDocument:
